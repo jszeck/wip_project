@@ -1,0 +1,165 @@
+File Manifest for ICPSR 34650
+
+
+
+Study-level Documentation
+
+    Filename                            Record  Record    Var.    Date        MD5
+                                        Length  Count     Count   Updated     Checksum
+
+    34650-related_literature.txt        -       -         -       2016-03-31  -
+
+    34650-manifest.txt                  -       -         -       2016-04-01  -
+
+    34650-Codebook.pdf                  -       -         -       2013-10-28  d341eb1951446d489ef5bea200610652
+
+
+DS0001 Address Record-Type File
+
+    Filename                            Record  Record    Var.    Date        MD5
+                                        Length  Count     Count   Updated     Checksum
+
+    34650-0001-Data.dta                 -       127,441   11      2013-10-28  53fdd41ed48da165367068ee31aa1284
+
+    34650-0001-Data.rda                 -       127,441   11      2013-10-28  457f89c437c8fa8807b6453a1af814f7
+
+    34650-0001-Data.sav                 -       127,441   11      2013-10-28  a0464108f81e0068b7450ab87a7392dd
+
+    34650-0001-Data.stc                 -       127,441   11      2013-10-28  826e2d268e98c45e8d851de25822ef1d
+
+    34650-0001-Data.tsv                 -       127,441   11      2013-10-28  c3b85a65a869f39bbf0e7da364c65b28
+
+    34650-0001-Data.txt                 77      127,441   11      2013-10-28  b252e72270972469e6c7b4e5137da9d7
+
+    34650-0001-Setup.dct                -       -         -       2013-10-28  2aef18ed598f06d0339405a7598f6cf3
+
+    34650-0001-Setup.do                 -       -         -       2013-10-28  cc22c313a12483ebd9bc3896b14ea197
+
+    34650-0001-Setup.sas                -       -         -       2013-10-28  56a1a9b8b80b8bd555d96d915bc551c0
+
+    34650-0001-Setup.sps                -       -         -       2013-10-28  7ca863ac760ea42f1a2940c1e176994a
+
+    34650-0001-Supplemental_syntax.do   -       -         -       2013-10-28  c13f27e62d682557366022bf901a6853
+
+    34650-0001-Supplemental_syntax.sas  -       -         -       2013-10-28  2efbedfe22355a0df733fd5f8758e83d
+
+
+DS0002 Household Record-Type File
+
+    Filename                            Record  Record    Var.    Date        MD5
+                                        Length  Count     Count   Updated     Checksum
+
+    34650-0002-Data.dta                 -       127,441   280     2013-10-28  c6118da0af8ec62378e2e76470b90c5f
+
+    34650-0002-Data.rda                 -       127,441   280     2013-10-28  e9a9d77dd5e2f4c30292278334a533a1
+
+    34650-0002-Data.sav                 -       127,441   280     2013-10-28  b3019213ff2762a87e0c39bbda031cfc
+
+    34650-0002-Data.stc                 -       127,441   280     2013-10-28  ae405848d7849aae858a008d39da9971
+
+    34650-0002-Data.tsv                 -       127,441   280     2013-10-28  443b3747f28cc680d8a7b85e8fcd61c4
+
+    34650-0002-Data.txt                 2360    127,441   280     2013-10-28  12854d11d5a1f014e5d85f218d76ff63
+
+    34650-0002-Setup.dct                -       -         -       2013-10-28  8531b62dbe64659047aba3c6228aed65
+
+    34650-0002-Setup.do                 -       -         -       2013-10-28  72661960a49e23165dfdb848315a7d2a
+
+    34650-0002-Setup.sas                -       -         -       2013-10-28  e6ec2b8ae24f30459a381ee0a6f42142
+
+    34650-0002-Setup.sps                -       -         -       2013-10-28  aebad24204f787476de3a9281042d393
+
+    34650-0002-Supplemental_syntax.do   -       -         -       2013-10-28  2b0e4ef52f3b333e7043848236939c1a
+
+    34650-0002-Supplemental_syntax.sas  -       -         -       2013-10-28  74ad5153f88c756c205a14ff264f8f2b
+
+
+DS0003 Person Record-Type File
+
+    Filename                            Record  Record    Var.    Date        MD5
+                                        Length  Count     Count   Updated     Checksum
+
+    34650-0003-Data.dta                 -       187,684   240     2013-10-28  828a9f5458ace8993e4f6e98391ee858
+
+    34650-0003-Data.rda                 -       187,684   240     2013-10-28  991443a8fe7efea1a9fa7fab7a6a318b
+
+    34650-0003-Data.sav                 -       187,684   240     2013-10-28  7240e98b28115e6827b2878e445bc3d0
+
+    34650-0003-Data.stc                 -       187,684   240     2013-10-28  3048d6883199625d57507bd78ffa3222
+
+    34650-0003-Data.tsv                 -       187,684   240     2013-10-28  60a2ad308617308a2ed074c995c9b1a0
+
+    34650-0003-Data.txt                 2310    187,684   240     2013-10-28  7985cd1d59cc22ab5833f3a59bf532d8
+
+    34650-0003-Setup.dct                -       -         -       2013-10-28  3193dc1aca8a789ade1b690813cd1260
+
+    34650-0003-Setup.do                 -       -         -       2013-10-28  7b2913fa650ab964117788aa403c23b3
+
+    34650-0003-Setup.sas                -       -         -       2013-10-28  a57882a98bf3258ec22d93c95b85a807
+
+    34650-0003-Setup.sps                -       -         -       2013-10-28  eff71e492a0684d1c57afd85566e1d53
+
+    34650-0003-Supplemental_syntax.do   -       -         -       2013-10-28  c04d88ce48084e6720b80bed4834397f
+
+    34650-0003-Supplemental_syntax.sas  -       -         -       2013-10-28  3aa45a02885de5f51f6f48850479ab6e
+
+
+DS0004 Incident Record-Type File
+
+    Filename                            Record  Record    Var.    Date        MD5
+                                        Length  Count     Count   Updated     Checksum
+
+    34650-0004-Data.dta                 -       9,215     950     2013-10-28  62b837f6a92441656608e96907ee361b
+
+    34650-0004-Data.rda                 -       9,215     950     2013-10-28  62fdb383c8e7a917dc77c710148ef281
+
+    34650-0004-Data.sav                 -       9,215     950     2013-10-28  180553aa2b8002ff582054db98a83a33
+
+    34650-0004-Data.stc                 -       9,215     950     2013-10-28  562f39dd70801998bd6cf43533bfbe0a
+
+    34650-0004-Data.tsv                 -       9,215     950     2013-10-28  d68212cc7976562ae913c68831f043d2
+
+    34650-0004-Data.txt                 5092    9,215     950     2013-10-28  8c589e2544855f40b799d9807182ff4f
+
+    34650-0004-Setup.dct                -       -         -       2013-10-28  4809d24c880812b743005a963a45d0e5
+
+    34650-0004-Setup.do                 -       -         -       2013-10-28  434cc320a52ae3ec77cdb2c5867742a7
+
+    34650-0004-Setup.sas                -       -         -       2013-10-28  851f25158f543a1a9cfa990802f630da
+
+    34650-0004-Setup.sps                -       -         -       2013-10-28  41e1b9545ad37ef63f0b93c531745e34
+
+    34650-0004-Supplemental_syntax.do   -       -         -       2013-10-28  7bfbeb91835cc2e0491f28dbee56c8cf
+
+    34650-0004-Supplemental_syntax.sas  -       -         -       2013-10-28  fba37231187fe417d3c85c60506b87fa
+
+
+DS0005 2012 Collection Year Incident-Level Extract File
+
+    Filename                            Record  Record    Var.    Date        MD5
+                                        Length  Count     Count   Updated     Checksum
+
+    34650-0005-Data.dta                 -       9,215     1145    2013-10-28  9086c7c9d3adfd859a3ed3a60db440cd
+
+    34650-0005-Data.rda                 -       9,215     1145    2013-10-28  4639a10b1011bf253c32656085cb26f6
+
+    34650-0005-Data.sav                 -       9,215     1145    2013-10-28  e243b4308907c1d3c2730d87509d58c0
+
+    34650-0005-Data.stc                 -       9,215     1145    2013-10-28  2bbd4653353bb0b4464429b844db9500
+
+    34650-0005-Data.tsv                 -       9,215     1145    2013-10-28  8f49892cb34d2930a7d042ab805dc098
+
+    34650-0005-Data.txt                 5513    9,215     1145    2013-10-28  82cb13ed3a10aadaf7ab9191fb368e35
+
+    34650-0005-Setup.dct                -       -         -       2013-10-28  98a4e3789a711256a44f97a60d2852a3
+
+    34650-0005-Setup.do                 -       -         -       2013-10-28  122b2ee6a04447c15323cb746b9e4823
+
+    34650-0005-Setup.sas                -       -         -       2013-10-28  f9ca7f18223968e1dc7b503f675b0e22
+
+    34650-0005-Setup.sps                -       -         -       2013-10-28  e6eeef542c6a2480253ad394e30fef8b
+
+    34650-0005-Supplemental_syntax.do   -       -         -       2013-10-28  643a526386c6f5cf5b0110d4f6aa0ae4
+
+    34650-0005-Supplemental_syntax.sas  -       -         -       2013-10-28  bee1dd7432cd953aa350ece35bad9a3a
+
