@@ -51,8 +51,8 @@ class Analizer(object):
         Outputs: print statements
         '''
 
-        ll = len(self.code_dict)
-        testkey = self.predict in self.code_dict.values()
+        self.printSurveyAbstract()
+
         print ("\n Main(), for " + self.predict + '\n')
 
         low_var_features = ['V2001', 'V2009', 'V2027', 'V2028', 'V2029', 'V2030', 'V2031', 'V2109',
@@ -61,13 +61,14 @@ class Analizer(object):
                             'V4320']
 
         overpowered_features = ['V4528',
+                                #'V4002',
                                 'V4112', 'V4060', 'V4094', 'V4364', 'V4321', 'V4287', 'V4289',
-                                'V4373', 'V4288', 'V4290',
-                                'V3080', 'V3026',
+                                #'V4373', 'V4288', 'V4290', 'V4012',
+                                'V3080', 'V3026', 'V3002', 'V3008', 'V3013',
                                 'V2008', 'V2002', 'V2116', 'V2117', 'V2118',
-                                'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
-                                'INCREPWGT14', 'INCREPWGT43',
-                                'FRCODE', 'WGTPERCY', 'YEARQ', 'WGTHHCY']
+                                #'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
+                                #'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
+                                'FRCODE', 'WGTPERCY', 'WGTHHCY'] # 'YEARQ'
 
         print "Over powered features: \n"
         self.printCodes(overpowered_features)
@@ -79,8 +80,8 @@ class Analizer(object):
         self.printResults()
 
         # make a slice of df_data with given feature_importance and then make a model with just those features
-        self.df_small = self.getTopNfeatures(20)
-        self.model = self.doOneModel(self.predict, self.df_small, 15)
+        self.df_small = self.getTopNfeatures(30)
+        self.model = self.doOneModel(self.predict, self.df_small, 20)
         self.printResults()
         self.getTopNfeatures(15)
 
@@ -217,9 +218,31 @@ class Analizer(object):
         return df_small
 
 
+    def printSurveyAbstract(self):
+        abstract = '''The National Crime Victimization Survey (NCVS), previously the National Crime Survey (NCS), has been collecting data on personal and
+        household victimization through an ongoing survey of a nationally-representative sample of residential addresses since 1972. The survey
+        is administered by the U.S. Census Bureau (under the U.S. Department of Commerce) on behalf of the Bureau of Justice Statistics (under
+        the U.S. Department of Justice).
+        The NCS and NCVS were both designed with four primary objectives:
 
+        To develop detailed information about the victims and consequences of crime,
+            To estimate the numbers and types of crimes not reported to the police,
+            To provide uniform measures of selected types of crimes, and
+            To permit comparisons over time and types of areas.
 
-
+        Beginning in 1992 the NCVS categorizes crimes as "personal" or "property" covering the personal crimes of rape and sexual attack,
+        robbery, aggravated and simple assault and purse-snatching/ pocket-picking; and the property crimes of burglary, theft, and motor vehicle
+        theft. Beyond a simple count of victimizations, the NCVS gathers details on the incident itself insofar as the victim can report them. Such
+        -4-- Study 34650 -
+        details include the month, time, and location of the crime, the relationship between victim and offender, characteristics of the offender,
+        self-protective actions taken by the victim during the incident and results of those actions, consequences of the victimization, type of
+        property lost, whether the crime was reported to police and reasons for reporting or not reporting, and offender use of weapons, drugs,
+        and alcohol. Basic demographic information, such as age, race, gender, and income, is also collected to enable analysis of crime by
+        various sub-populations for select years. Information is also obtained on vandalism and identity theft experienced by the household. The
+        glossary (see p. 493) describes terms relevant to the NCVS.
+        Analysts who are interested in the history of the redesign of the NCVS or are interested in conducting analyses using both NCS and NCVS
+        data should refer to the NCVS Resource Guide (http://www.icpsr.umich.edu/NACJD/NCVS) on the NACJD Web site.'''
+        print abstract
 
 Analizer()
 
