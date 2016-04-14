@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import graphlab as gl
 import re
+from collections import Counter
 
 class Analizer(object):
 
@@ -41,6 +42,42 @@ class Analizer(object):
         print "\n"
 
 
+    def trimFeatures(self):
+        low_var_features = ['V2001', 'V2009', 'V2027', 'V2028', 'V2029', 'V2030', 'V2031', 'V2109',
+                            'V2110', 'V2112', 'V2114', 'V2115', 'V2123', 'V2131', 'V2142', 'V3001',
+                            'V3027', 'V3051', 'V3057', 'V3060', 'V3069', 'V3082', 'V4001', 'V4319',
+                            'V4320']
+
+        overpowered_features = ['V4528',
+                            'V4002',
+                            'V4112', 'V4060', 'V4094', 'V4364', 'V4321', 'V4287', 'V4289',
+                            'V4373', 'V4290', 'V4012', # 'V4288'
+                            'V3080', 'V3026', 'V3002', 'V3008', 'V3013',
+                            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2033',
+                            # 'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
+                            # 'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
+                            'FRCODE', 'WGTPERCY', 'WGTHHCY']  # 'YEARQ'
+
+        print "Over powered features: \n"
+        self.printCodes(overpowered_features)
+
+        self.delFeatures(low_var_features)
+        self.delFeatures(overpowered_features)
+
+
+    def examineFeature(self, feature='V4529'):
+
+        print "Examine: " + feature
+
+        df_examine = self.df_data[feature]
+
+        print str(df_examine.describe()) + "\n"
+
+        freq = Counter(list(df_examine.values))
+
+        print freq
+
+
     def _main(self):
 
         '''
@@ -51,39 +88,25 @@ class Analizer(object):
         Outputs: print statements
         '''
 
-        self.printSurveyAbstract()
+        # self.printSurveyAbstract()
 
         print ("\n Main(), for " + self.predict + '\n')
 
-        low_var_features = ['V2001', 'V2009', 'V2027', 'V2028', 'V2029', 'V2030', 'V2031', 'V2109',
-                            'V2110', 'V2112', 'V2114', 'V2115', 'V2123', 'V2131', 'V2142', 'V3001',
-                            'V3027', 'V3051', 'V3057', 'V3060', 'V3069', 'V3082', 'V4001', 'V4319',
-                            'V4320']
+        self.trimFeatures()
 
-        overpowered_features = ['V4528',
-                                #'V4002',
-                                'V4112', 'V4060', 'V4094', 'V4364', 'V4321', 'V4287', 'V4289',
-                                #'V4373', 'V4288', 'V4290', 'V4012',
-                                'V3080', 'V3026', 'V3002', 'V3008', 'V3013',
-                                'V2008', 'V2002', 'V2116', 'V2117', 'V2118',
-                                #'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
-                                #'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
-                                'FRCODE', 'WGTPERCY', 'WGTHHCY'] # 'YEARQ'
+        self.examineFeature()
 
-        print "Over powered features: \n"
-        self.printCodes(overpowered_features)
 
-        self.delFeatures(low_var_features)
-        self.delFeatures(overpowered_features)
 
-        self.model = self.doOneModel(self.predict, self.df_data, 4)
+        self.model = self.doOneModel(self.predict, self.df_data, iters=5)
         self.printResults()
 
         # make a slice of df_data with given feature_importance and then make a model with just those features
-        self.df_small = self.getTopNfeatures(30)
-        self.model = self.doOneModel(self.predict, self.df_small, 20)
+        self.df_small = self.getTopNfeatures(50)
+        self.model = self.doOneModel(self.predict, self.df_small, iters=10)
         self.printResults()
-        self.getTopNfeatures(15)
+
+        self.getTopNfeatures(len(self.df_small))
 
 
     def codebookIntoDict(self, my_file='data/data_meta/BIG-Codebook.txt'):
@@ -188,8 +211,9 @@ class Analizer(object):
         print "\nFeature importance: \n"
         print self.model.get_feature_importance()
 
-        #print("Model summary: \n", self.model.summary())
+        print("\nModel results: \n")
 
+        print self.results
 
 
     def getTopNfeatures(self, N=10):
@@ -219,7 +243,7 @@ class Analizer(object):
 
 
     def printSurveyAbstract(self):
-        abstract = '''The National Crime Victimization Survey (NCVS), previously the National Crime Survey (NCS), has been collecting data on personal and
+        abstract = '''The National Crime Victimization Survey (NCVS), ... has been collecting data on personal and
         household victimization through an ongoing survey of a nationally-representative sample of residential addresses since 1972. The survey
         is administered by the U.S. Census Bureau (under the U.S. Department of Commerce) on behalf of the Bureau of Justice Statistics (under
         the U.S. Department of Justice).
@@ -246,7 +270,19 @@ class Analizer(object):
 
 Analizer()
 
-    #
+
+
+'''
+More things to try
+
+make sub populations and make models for them
+
+iterate over 100 feature and models for each.
+see which features are easiet to predict
+
+'''
+
+
     #
     # # Things to try later:
     # https://dato.com/products/create/docs/graphlab.toolkits.feature_engineering.html#categorical-features
