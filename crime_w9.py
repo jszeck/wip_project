@@ -4,6 +4,9 @@ import numpy as np
 import graphlab as gl
 import re
 from collections import Counter
+from statsmodels.discrete.discrete_model import Logit
+from sklearn.cross_validation import train_test_split
+from statsmodels.tools import tools
 
 class Analizer(object):
 
@@ -94,9 +97,41 @@ class Analizer(object):
 
         self.trimFeatures()
 
-        self.examineFeature()
+        self.regressOnFeatureSM()
+
+        # self.examineFeature()
+
+        # self.predictFeatureGL()
 
 
+    def regressOnFeatureSM(self):
+        '''
+        What: create a regression model with Statsmodels and try and find the Betas,
+        ie, try to find feature causation.
+
+        In: trimmed-down data
+        Out: print statements and a linear model regression
+        '''
+        df_dummies = pd.get_dummies(self.df_data)
+
+        df_dummies = pd.concat([df_dummies, self.df_data], axis=0)
+
+        X_train, X_test, y_train, y_test = train_test_split(df_dummies, self.df_data[self.predict].values,
+                                                            test_size=0.3, random_state=42)
+        X_train = tools.add_constant(X_train)
+        modelSM = Logit(y_train, X_train).fit()
+
+
+
+        print modelSM.summary()
+
+    def predictFeatureGL(self):
+        '''
+        What: Does model constuction methods; and prints the results
+
+        Inputs: receives initial data from __init__
+        Outputs: print statements, model -> self.model
+        '''
 
         self.model = self.doOneModel(self.predict, self.df_data, iters=5)
         self.printResults()
@@ -107,6 +142,7 @@ class Analizer(object):
         self.printResults()
 
         self.getTopNfeatures(len(self.df_small))
+
 
 
     def codebookIntoDict(self, my_file='data/data_meta/BIG-Codebook.txt'):
