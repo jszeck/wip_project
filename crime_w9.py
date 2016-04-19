@@ -6,6 +6,9 @@ import re
 from collections import Counter
 from statsmodels.discrete.discrete_model import Logit
 from sklearn.cross_validation import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.cross_validation import cross_val_score
 from statsmodels.tools import tools
 
 class Analizer(object):
@@ -24,6 +27,10 @@ class Analizer(object):
         self.df_data = pd.read_table(new_file)
 
         self.code_dict = self.codebookIntoDict()
+        self.crime_dict = {1: "Sexual assault or rape", 5: "Robbery with assault", 7: "Robbery without assault",
+                           11: "Assault", 12: "Assault with a weapon", 16: "Unwanted sexual contact without force",
+                           21: "Pickpocketing or purse snatching", 31: "Home invasion theft", 40: "Car theft",
+                           54: "Theft under $250", 57: "Theft over $250", -1: "Not defined / error"}
 
         self.df_small = None
         self.model = None
@@ -44,25 +51,126 @@ class Analizer(object):
                 print code
         print "\n"
 
+    def compressV4529(self):
+        '''
+        What: squish down many similiar types of crime.
+                IE, (assault,completed + assault,attempted = assault)
 
-    def trimFeatures(self):
+        In: self.df_data
+        Out: modifies self.df_data['V4529'] to have less variance
+        '''
+        # make an empty list
+        values = [None] * len(self.df_data['V4529'])
+
+        for i, oldCode in enumerate(self.df_data['V4529']):
+            crimeCode='unassigned'
+
+            '''
+            if int(oldCode) in [1, 2, 3, 4, 15, 18, 19]:
+                crimeCode = 'Sexual assault'  # turn rape and sexual assault into one cat.
+
+            elif int(oldCode) in [5, 6, 8, 9]:
+                crimeCode = 'Theft with assault'  # theft with assault'
+
+            elif int(oldCode) in [7, 10]:
+                crimeCode = 'Theft without assault'  # 'robbery withOUT assault'
+
+            elif int(oldCode) in [11, 14, 17, 20]:
+                crimeCode = 'Assault'  # assault
+
+            elif int(oldCode) in [12, 13]:
+                crimeCode = 'Assault with weapon'  # assault with a Weapon
+
+            elif int(oldCode) in [16]:
+                crimeCode = 'Unwanted sexual contact'  # unwanted sexual contact without force
+
+            elif int(oldCode) in [21, 22, 23]:
+                crimeCode = 'P.pocketing/purse-snatching'  # pickpocketing / purse snatching
+
+            elif int(oldCode) in [31, 32, 33]:
+                crimeCode = 'Home invasion/theft'  # home invasion burglary
+
+            elif int(oldCode) in [40, 41]:
+                crimeCode = 'Car theft'  # car theft
+
+            elif int(oldCode) in [54, 55, 56, 58, 59]:
+                crimeCode = 'Theft under $250'  # theft under $250
+
+            elif int(oldCode) in [57]:
+                crimeCode = 'Theft over $250'  # theft over $250
+            '''
+
+
+            if int(oldCode) in [1,2,3,4,15,18,19]:
+                crimeCode = 1 # turn rape and sexual assault into one catagory
+
+            elif int(oldCode) in [5,6,8,9]:
+                crimeCode = 5 # robbery with assault'
+
+            elif int(oldCode) in [7, 10]:
+                crimeCode = 7  # 'robbery withOUT assault'
+
+            elif int(oldCode) in [11,14,17,20]:
+                crimeCode = 11  # assault
+
+            elif int(oldCode) in [12,13]:
+                crimeCode = 12  # assault with a Weapon
+
+            elif int(oldCode) in [16]:
+                crimeCode = 16  # unwanted sexual contact without force
+
+            elif int(oldCode) in [21,22,23]:
+                crimeCode = 21  # pickpocketing / purse snatching
+
+            elif int(oldCode) in [31,32,33]:
+                crimeCode = 31  # home invasion burglary
+
+            elif int(oldCode) in [40,41]:
+                crimeCode = 40  # car theft
+
+            elif int(oldCode) in [54,55,56,58,59]:
+                crimeCode = 54  # theft under $250
+
+            elif int(oldCode) in [57]:
+                crimeCode = 57  # theft over $250
+
+
+            values[i] = crimeCode
+
+        del self.df_data['V4529']
+        self.df_data['V4529'] = values
+
+
+    def trimFeatures(self, verbose=False):
         low_var_features = ['V2001', 'V2009', 'V2027', 'V2028', 'V2029', 'V2030', 'V2031', 'V2109',
                             'V2110', 'V2112', 'V2114', 'V2115', 'V2123', 'V2131', 'V2142', 'V3001',
                             'V3027', 'V3051', 'V3057', 'V3060', 'V3069', 'V3082', 'V4001', 'V4319',
                             'V4320']
 
-        overpowered_features = ['V4528',
-                            'V4002',
-                            'V4112', 'V4060', 'V4094', 'V4364', 'V4321', 'V4287', 'V4289',
-                            'V4373', 'V4290', 'V4012', # 'V4288'
-                            'V3080', 'V3026', 'V3002', 'V3008', 'V3013',
-                            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2033',
+        overpowered_features = ['V4528','V4529', 'V4526', # 4526/8/9, type of crime
+                            'V4140B1', 'V4140B2', 'V4140B3',
+                            'V4002', 'V4049', 'V4097', 'V4098', 'V4099', 'V4100', 'V4101', # 4097, attacked: shot
+                            'V4102', 'V4103', 'V4104', 'V4105', 'V4106', 'V4107', 'V4108', 'V4109', 'V4111', 'V4123',
+                            'V4059', 'V4093', 'V4062', 'V4005', 'V4077', 'V4060', 'V4061', 'V4096', 'V4127', 'V4040',
+                            'V4112', 'V4094', 'V4364', 'V4321', 'V4287', 'V4288', 'V4289', 'V4028', 'V4027',
+                            'V4373', 'V4290', 'V4012', 'V4026', 'V4095', 'V4078', 'V4079', 'V4080', 'V4081', 'V4082',
+                            'V4050', # 4050, what was weapon
+                            'V4291', 'V4292', 'V4293', 'V4294', 'V4295', 'V4296', 'V4297', 'V4298',
+                            'V4322', 'V4323', 'V4324', 'V4326', 'V4357', 'V4385', 'V4397',
+                            'V4063', 'V4064', 'V4065', 'V4066', 'V4067', 'V4068', 'V4069', 'V4070', #these are all targets
+                            'V4422', 'V4011', # 4422, reason not reported
+                            'V3080', 'V3026', 'V3002', 'V3008', 'V3013', 'V3005',
+                            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2033', 'V2005', 'V2006',
                             # 'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
                             # 'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
-                            'FRCODE', 'WGTPERCY', 'WGTHHCY']  # 'YEARQ'
+                            'FRCODE', 'WGTPERCY', 'WGTHHCY', 'IDPER', 'IDHH', 'V4008', 'YEARQ']  #
 
-        print "Over powered features: \n"
-        self.printCodes(overpowered_features)
+        if self.predict in overpowered_features:
+            overpowered_features.remove(self.predict)
+
+        if verbose is False:
+            print "Over powered features: \n"
+            self.printCodes(overpowered_features)
 
         self.delFeatures(low_var_features)
         self.delFeatures(overpowered_features)
@@ -78,8 +186,28 @@ class Analizer(object):
 
         freq = Counter(list(df_examine.values))
 
-        print freq
+        for item in freq.items():
+            print "item ", item
 
+    def testForDataLeakage(self, typeOfCrime=1, top_n=10):
+
+        feature_aucs = {}
+
+        for feature in list(self.df_data.columns.values):
+            model_cur = LogisticRegression()
+
+            cur_X = self.df_data[feature].values
+            cur_X = cur_X.reshape(cur_X.shape[0], 1)
+
+            cur_y = self.df_data[self.predict].apply(lambda x: 1 if x==typeOfCrime else 0).values
+
+            auc_cur = cross_val_score(model_cur, cur_X, cur_y, n_jobs=-1)
+
+            feature_aucs[feature] = np.mean(auc_cur)
+
+        auc_counter = Counter(feature_aucs).most_common(top_n)
+
+        return list(auc_counter)
 
     def _main(self):
 
@@ -90,18 +218,34 @@ class Analizer(object):
         Inputs: receives initial data from __init__
         Outputs: print statements
         '''
-
         # self.printSurveyAbstract()
-
         print ("\n Main(), for " + self.predict + '\n')
 
-        self.trimFeatures()
+        self.trimFeatures(verbose=True)
 
-        self.regressOnFeatureSM()
+        #self.regressOnFeatureSM()
 
-        # self.examineFeature()
+        self.compressV4529()
+        #self.examineFeature(self.predict)
 
-        # self.predictFeatureGL()
+        crime_to_features_causation = []
+
+        for crime in [1,11]:
+            top_features = self.testForDataLeakage(crime, 10)
+            crime_to_features_causation.append((self.crime_dict[crime], top_features))
+
+        for correlation in crime_to_features_causation:
+            print correlation
+            print ""
+
+        #self.predictFeatureGL(8)
+
+
+
+    def printCrimeDict(self):
+        print "\n"
+        for item in self.crime_dict.items():
+            print item
 
 
     def regressOnFeatureSM(self):
@@ -125,7 +269,8 @@ class Analizer(object):
 
         print modelSM.summary()
 
-    def predictFeatureGL(self):
+
+    def predictFeatureGL(self, GLiters=4):
         '''
         What: Does model constuction methods; and prints the results
 
@@ -133,12 +278,15 @@ class Analizer(object):
         Outputs: print statements, model -> self.model
         '''
 
-        self.model = self.doOneModel(self.predict, self.df_data, iters=5)
+        self.model = self.doOneGLModel(self.predict, self.df_data, iters=GLiters)
         self.printResults()
 
+        #if self.predict == 'V4529':
+         #   self.printCrimeDict()
+
         # make a slice of df_data with given feature_importance and then make a model with just those features
-        self.df_small = self.getTopNfeatures(50)
-        self.model = self.doOneModel(self.predict, self.df_small, iters=10)
+        self.df_small = self.getTopNfeatures(20)
+        self.model = self.doOneGLModel(self.predict, self.df_small, iters=GLiters*3)
         self.printResults()
 
         self.getTopNfeatures(len(self.df_small))
@@ -194,19 +342,13 @@ class Analizer(object):
 
 
 
-
     def delFeatures(self, features):
-
-
         for cur_feat in features:
             del self.df_data[cur_feat]
 
 
 
-
-
-
-    def doOneModel(self, predict, df_to_predict_on, iters=5):
+    def doOneGLModel(self, predict, df_to_predict_on, iters=5):
         '''
         What: Make a predictive model using a graphlab boosted trees classifier.
 
@@ -226,7 +368,7 @@ class Analizer(object):
         # column_subsample=1.0, verbose=True, random_seed=None, metric='auto', **kwargs)
 
         model = gl.boosted_trees_classifier.create(sf_data, predict, features=None,
-                max_iterations=iters, validation_set='auto', class_weights=None, max_depth=10,
+                max_iterations=iters, validation_set='auto', class_weights=None, max_depth=15,
                 step_size=0.3, min_loss_reduction=0.0, min_child_weight=0.1, row_subsample=1.0,
                 column_subsample=1.0, verbose=True, random_seed=42, metric='auto')
 
@@ -240,8 +382,6 @@ class Analizer(object):
 
 
 
-
-
     def printResults(self):
 
         print "\nFeature importance: \n"
@@ -250,6 +390,7 @@ class Analizer(object):
         print("\nModel results: \n")
 
         print self.results
+
 
 
     def getTopNfeatures(self, N=10):
@@ -265,6 +406,9 @@ class Analizer(object):
 
         features_small = list(self.model.get_feature_importance()['name'][0:top_n_features])
         print ("\n Top " + str(top_n_features) + " features of model: \n")
+
+        if " HC" in features_small:
+            print 'Note: HC = Hate Crime \n'
 
         self.printCodes(features_small)
 
@@ -304,8 +448,9 @@ class Analizer(object):
         data should refer to the NCVS Resource Guide (http://www.icpsr.umich.edu/NACJD/NCVS) on the NACJD Web site.'''
         print abstract
 
-Analizer()
-
+Analizer(new_predict='V4529')
+# V4529 type of crime
+# V4060 OFFENDER HIT OR ATTACK (ALLOCATED)
 
 
 '''
