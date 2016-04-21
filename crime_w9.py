@@ -1,7 +1,9 @@
 
 import pandas as pd
 import numpy as np
+import pickle as pk
 import graphlab as gl
+import os
 import re
 from collections import Counter
 from statsmodels.discrete.discrete_model import Logit
@@ -28,9 +30,26 @@ class Analizer(object):
 
         self.code_dict = self.codebookIntoDict()
         self.crime_dict = {1: "Sexual assault or rape", 5: "Robbery with assault", 7: "Robbery without assault",
-                           11: "Assault", 12: "Assault with a weapon", 16: "Unwanted sexual contact without force",
+                           11: "Assault", # 12: "Assault with a weapon", 16: "Unwanted sexual contact without force",
                            21: "Pickpocketing or purse snatching", 31: "Home invasion theft", 40: "Car theft",
-                           54: "Theft under $250", 57: "Theft over $250", -1: "Not defined / error"}
+                           54: "Theft under $250", 57: "Theft over $250"} # , -1: "Not defined / error"}
+
+        path = 'feature_importanceSK_V4529.p'
+
+        if os.path.isfile(path) == True:
+
+            self.old_feature_importance = pk.load(open(path, 'r'))
+            print "\n old_feature_importance: \n"
+
+            for classification in self.old_feature_importance:
+
+                class_dict = dict(classification[1]).keys()
+                print classification[0], ':\t',  class_dict
+                self.printCodes(class_dict)
+
+        else:
+            self.old_feature_importance = None
+            print 'Warning: missing file  ' + path + ' , code may not work.'
 
         self.df_small = None
         self.model = None
@@ -101,7 +120,7 @@ class Analizer(object):
             '''
 
 
-            if int(oldCode) in [1,2,3,4,15,18,19]:
+            if int(oldCode) in [1,2,3,4,15,16,18,19]:
                 crimeCode = 1 # turn rape and sexual assault into one catagory
 
             elif int(oldCode) in [5,6,8,9]:
@@ -110,14 +129,14 @@ class Analizer(object):
             elif int(oldCode) in [7, 10]:
                 crimeCode = 7  # 'robbery withOUT assault'
 
-            elif int(oldCode) in [11,14,17,20]:
+            elif int(oldCode) in [11,14,17,20, 12,13]:
                 crimeCode = 11  # assault
 
-            elif int(oldCode) in [12,13]:
-                crimeCode = 12  # assault with a Weapon
+            #elif int(oldCode) in [12,13]:
+                #crimeCode = 12  # assault with a Weapon
 
-            elif int(oldCode) in [16]:
-                crimeCode = 16  # unwanted sexual contact without force
+            #elif int(oldCode) in [16]:
+                #crimeCode = 16  # unwanted sexual contact without force
 
             elif int(oldCode) in [21,22,23]:
                 crimeCode = 21  # pickpocketing / purse snatching
@@ -140,6 +159,27 @@ class Analizer(object):
         del self.df_data['V4529']
         self.df_data['V4529'] = values
 
+    def correctFeatureImbalance(self, classes=[54, 57, 31, 11, 21, 1, 5, 7, 40], ratios=[.3, .7, .7, .7]):
+
+        sf_new = None
+
+        sf = gl.SFrame(self.df_data)
+
+        for i, crime_class in enumerate(classes):
+
+            if i <= 3:
+                slice = sf[sf[self.predict] == crime_class].sample(ratios[i])  # down sample unbalanced classes
+            else:
+                slice = sf[sf[self.predict] == crime_class]  # take all these (more rare) crimes
+
+            if sf_new is None:
+                sf_new = slice
+            else:
+                sf_new = sf_new.append(slice)
+
+            #print "correctFeatureImbalance: ", i, self.crime_dict[crime_class]
+
+        self.df_data = sf_new.to_dataframe()
 
     def trimFeatures(self, verbose=False):
         low_var_features = ['V2001', 'V2009', 'V2027', 'V2028', 'V2029', 'V2030', 'V2031', 'V2109',
@@ -147,23 +187,53 @@ class Analizer(object):
                             'V3027', 'V3051', 'V3057', 'V3060', 'V3069', 'V3082', 'V4001', 'V4319',
                             'V4320']
 
-        overpowered_features = ['V4528','V4529', 'V4526', # 4526/8/9, type of crime
-                            'V4140B1', 'V4140B2', 'V4140B3',
-                            'V4002', 'V4049', 'V4097', 'V4098', 'V4099', 'V4100', 'V4101', # 4097, attacked: shot
-                            'V4102', 'V4103', 'V4104', 'V4105', 'V4106', 'V4107', 'V4108', 'V4109', 'V4111', 'V4123',
-                            'V4059', 'V4093', 'V4062', 'V4005', 'V4077', 'V4060', 'V4061', 'V4096', 'V4127', 'V4040',
-                            'V4112', 'V4094', 'V4364', 'V4321', 'V4287', 'V4288', 'V4289', 'V4028', 'V4027',
-                            'V4373', 'V4290', 'V4012', 'V4026', 'V4095', 'V4078', 'V4079', 'V4080', 'V4081', 'V4082',
-                            'V4050', # 4050, what was weapon
-                            'V4291', 'V4292', 'V4293', 'V4294', 'V4295', 'V4296', 'V4297', 'V4298',
-                            'V4322', 'V4323', 'V4324', 'V4326', 'V4357', 'V4385', 'V4397',
-                            'V4063', 'V4064', 'V4065', 'V4066', 'V4067', 'V4068', 'V4069', 'V4070', #these are all targets
-                            'V4422', 'V4011', # 4422, reason not reported
-                            'V3080', 'V3026', 'V3002', 'V3008', 'V3013', 'V3005',
-                            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2033', 'V2005', 'V2006',
-                            # 'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
-                            # 'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
-                            'FRCODE', 'WGTPERCY', 'WGTHHCY', 'IDPER', 'IDHH', 'V4008', 'YEARQ']  #
+        overpowered_features = ['V4528','V4529', 'V4526', 'V4350', # 4526/8/9, type of crime
+            'V4140B1', 'V4140B2', 'V4140B3', 'V4140B10',
+            'V4002', 'V4048', 'V4049', 'V4092', 'V4097', 'V4098', 'V4099', 'V4100', 'V4101', # 4097, attacked: shot
+            'V4102', 'V4103', 'V4104', 'V4105', 'V4106', 'V4107', 'V4108', 'V4109', 'V4111', 'V4123',
+            'V4059', 'V4093', 'V4062', 'V4005', 'V4071', 'V4077', 'V4060', 'V4061', 'V4096', 'V4127', 'V4040',
+            'V4112', 'V4094', 'V4364', 'V4321', 'V4287', 'V4288', 'V4289', 'V4028', 'V4027',
+            'V4373', 'V4290', 'V4012', 'V4026', 'V4095', 'V4078', 'V4079', 'V4080', 'V4081', 'V4082', 'V4161',
+            'V4050', # 4050, what was weapon
+            'V4404', 'V4405', 'V4406', 'V4407', 'V4408', 'V4409', 'V4410', 'V4411', 'V4412', 'V4413',
+            'V4414', 'V4415', 'V4416', 'V4417', 'V4418', 'V4419', 'V4420', 'V4421', # 4404-4420, reason not reported
+            'V4522A', 'V4522B', 'V4522C', 'V4522D', 'V4522E', 'V4522F',# customer or client
+            'V4291', 'V4292', 'V4293', 'V4294', 'V4295', 'V4296', 'V4297', 'V4298', 'V4299', 'V4314',
+            'V4322', 'V4323', 'V4324', 'V4326', 'V4351', 'V4357', 'V4385', 'V4397',
+            'V4063', 'V4064', 'V4065', 'V4066', 'V4067', 'V4068', 'V4069', 'V4070', #these are all targets
+            'V4422', 'V4011', 'V4423', 'V4426', # reason (or not) reported
+            'V3080', 'V3026', 'V3002', 'V3008', 'V3013', 'V3005',
+            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2033', 'V2005', 'V2006', 'V2012', 'V2016', 'V2011',
+            # 'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
+            # 'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
+            'FRCODE', 'WGTPERCY', 'WGTHHCY', 'IDPER', 'IDHH', 'V4008', 'YEARQ', 'V2003','V2004']  #
+
+        strong_features_from_regression = [
+        'V4450', 'V4451', 'V4452', 'V4453', 'V4454', 'V4455', 'V4438',
+        'V4456', 'V4457', 'V4458', 'V4459', # police responses
+        'V4140B25', 'V4140B24', 'V4140B27', 'V4140B26', 'V4140B21', 'V4140B20',
+        'V4140B23', 'V4140B22', 'V4089', 'V4088', 'V4087', 'V4086', 'V4085', 'V4084', 'V4083', 'V4090', 'V4091',
+        'V4032', 'V4033', 'V4030', 'V4031', 'V4036', 'V4037', 'V4034', 'V4035',
+        'V4522G', 'V4522I', 'V4522H', #relation to attacker
+        'V4267', 'V4266', 'V4265', 'V4263', 'V4262', 'V4269', # relations
+        'V4519', 'V4518', 'V4264', 'V4261', 'V4512', 'V4513', 'V4515', 'V4516', #relations
+        'V4308', 'V4309', 'V4304', 'V4305', 'V4306', 'V4307', 'V4300', 'V4301', 'V4302', 'V4303',
+        'V4340', 'V4341', 'V4342', 'V4343', 'V4344', 'V4345', 'V4346', 'V4347', 'V4348', 'V4349', # items taken
+        'V4327', 'V4325', 'V4047', 'V4046', 'V4374', 'V4044', 'V4045', 'V4367', 'V4368', 'V4369',
+        'V4335', 'V4334', 'V4337', 'V4336', 'V4331', 'V4330', 'V4333', 'V4332', 'V4234', 'V4370', 'V4372', 'V4339', 'V4338', # items taken
+        'V4366', 'V4208', 'V4328', 'V4329', 'V4386A', 'V4365', # items taken
+        'V2128B','V2135', 'V2134', 'V2137', 'V2136', 'V2038', 'V2130', # panel meta data
+        'V4141', 'V4143', 'V4146', 'V4147', 'V4149', # victim self defense actions
+        'V4425', 'V4424', #reason reported
+        'V2133',
+        'V4157', 'V4159', # victim actions taken
+        'V4120', 'V4121', 'V4122',  # victim injuries
+        'V4140B6', 'V4140B7', 'V4140B4', 'V4140B5', 'V4140B8', 'V4140B9', # 'did you feel X?'
+        'V3055', # first incident
+        'V4355', 'V3056', '' # 'car' in description
+        'VICREPWGT71', 'VICREPWGT70', 'VICREPWGT73', 'VICREPWGT72', 'VICREPWGT75', 'VICREPWGT74',
+        'VICREPWGT77', 'VICREPWGT76' #replicate weight, method for accounting for survey data
+        ]
 
         if self.predict in overpowered_features:
             overpowered_features.remove(self.predict)
@@ -171,9 +241,11 @@ class Analizer(object):
         if verbose is False:
             print "Over powered features: \n"
             self.printCodes(overpowered_features)
+            self.printCodes(strong_features_from_regression)
 
         self.delFeatures(low_var_features)
         self.delFeatures(overpowered_features)
+        self.delFeatures(strong_features_from_regression)
 
 
     def examineFeature(self, feature='V4529'):
@@ -187,14 +259,14 @@ class Analizer(object):
         freq = Counter(list(df_examine.values))
 
         for item in freq.items():
-            print "item ", item
+            print "crime_category, frequency - ", item, ": \t", self.crime_dict[item[0]]
 
-    def testForDataLeakage(self, typeOfCrime=1, top_n=10):
+    def testForDataLeakage(self, typeOfCrime=1, top_n=20):
 
         feature_aucs = {}
 
         for feature in list(self.df_data.columns.values):
-            model_cur = LogisticRegression()
+            model_cur = LogisticRegression(n_jobs=-1)
 
             cur_X = self.df_data[feature].values
             cur_X = cur_X.reshape(cur_X.shape[0], 1)
@@ -203,7 +275,7 @@ class Analizer(object):
 
             auc_cur = cross_val_score(model_cur, cur_X, cur_y, n_jobs=-1)
 
-            feature_aucs[feature] = np.mean(auc_cur)
+            feature_aucs[feature] = np.round(np.mean(auc_cur), 4)
 
         auc_counter = Counter(feature_aucs).most_common(top_n)
 
@@ -222,24 +294,51 @@ class Analizer(object):
         print ("\n Main(), for " + self.predict + '\n')
 
         self.trimFeatures(verbose=True)
-
         #self.regressOnFeatureSM()
-
         self.compressV4529()
+
+        #print "\n Before \n"
         #self.examineFeature(self.predict)
+        self.correctFeatureImbalance()
+        #print "\n After \n"
+        self.examineFeature(self.predict)
+
+        #self.computeFeatureImportance([1,5,7,11,21,31,40,54,57])
+
+        #self.predictFeatureGL(GLiters=6, feature_slice=30)
+
+
+    def computeFeatureImportance(self, crimes = [12, 31]):
+        """
+        What: Test all features versus all classes (1 class at a time)
+            and record the results in a pickle
+
+        In: crime codes that you want to test, self.df_data
+        Out: pickle file, written to file
+        """
 
         crime_to_features_causation = []
+        print "\n--------------------------"
+        print '\ncomputeFeatureImportance():  ', str(len(crimes)), " crime categories"
+        #print "\t Matrix shape: ", self.df_data.columns.shape(), '\n'
 
-        for crime in [1,11]:
-            top_features = self.testForDataLeakage(crime, 10)
+        for i, crime in enumerate(crimes):
+            print "\t", str(int(i)+1), self.crime_dict[crime], "\n"
+            top_features = self.testForDataLeakage(crime, 50)
             crime_to_features_causation.append((self.crime_dict[crime], top_features))
 
         for correlation in crime_to_features_causation:
-            print correlation
-            print ""
+            print correlation, '\n'
 
-        #self.predictFeatureGL(8)
 
+        if os.path.isfile('feature_importance_sk.p') == True:
+            os.remove('feature_importance_sk.p')
+        else:
+            pass
+
+        f = open('feature_importance_sk.p', 'w')
+        pk.dump(crime_to_features_causation, f)
+        f.close()
 
 
     def printCrimeDict(self):
@@ -270,7 +369,7 @@ class Analizer(object):
         print modelSM.summary()
 
 
-    def predictFeatureGL(self, GLiters=4):
+    def predictFeatureGL(self, GLiters=4, feature_slice=20):
         '''
         What: Does model constuction methods; and prints the results
 
@@ -281,15 +380,15 @@ class Analizer(object):
         self.model = self.doOneGLModel(self.predict, self.df_data, iters=GLiters)
         self.printResults()
 
-        #if self.predict == 'V4529':
-         #   self.printCrimeDict()
+        if self.predict == 'V4529':
+            self.printCrimeDict()
 
         # make a slice of df_data with given feature_importance and then make a model with just those features
-        self.df_small = self.getTopNfeatures(20)
+        self.df_small = self.getTopNfeatures(feature_slice)
         self.model = self.doOneGLModel(self.predict, self.df_small, iters=GLiters*3)
         self.printResults()
 
-        self.getTopNfeatures(len(self.df_small))
+        self.getTopNfeatures(feature_slice)
 
 
 
@@ -347,7 +446,6 @@ class Analizer(object):
             del self.df_data[cur_feat]
 
 
-
     def doOneGLModel(self, predict, df_to_predict_on, iters=5):
         '''
         What: Make a predictive model using a graphlab boosted trees classifier.
@@ -381,7 +479,6 @@ class Analizer(object):
         return model
 
 
-
     def printResults(self):
 
         print "\nFeature importance: \n"
@@ -390,7 +487,6 @@ class Analizer(object):
         print("\nModel results: \n")
 
         print self.results
-
 
 
     def getTopNfeatures(self, N=10):
@@ -448,9 +544,9 @@ class Analizer(object):
         data should refer to the NCVS Resource Guide (http://www.icpsr.umich.edu/NACJD/NCVS) on the NACJD Web site.'''
         print abstract
 
+
 Analizer(new_predict='V4529')
 # V4529 type of crime
-# V4060 OFFENDER HIT OR ATTACK (ALLOCATED)
 
 
 '''
