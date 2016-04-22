@@ -9,14 +9,11 @@ from collections import Counter
 from statsmodels.discrete.discrete_model import Logit
 from sklearn.cross_validation import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.cross_validation import cross_val_score
-from statsmodels.tools import tools
 
 class Analizer(object):
 
-
-    def __init__(self, new_file='data/5-Data.tsv', new_predict = 'V4529'):
+    def __init__(self, new_file='data/5-Data.tsv', new_predict = 'V4529', verbose=True):
         '''
         What: initialize various objects for making a graphlab boosted trees classifier. Calls _main()
 
@@ -39,13 +36,15 @@ class Analizer(object):
         if os.path.isfile(path) == True:
 
             self.old_feature_importance = pk.load(open(path, 'r'))
-            print "\n old_feature_importance: \n"
 
-            for classification in self.old_feature_importance:
+            if verbose == False:
+                print "\n old_feature_importance: \n"
 
-                class_dict = dict(classification[1]).keys()
-                print classification[0], ':\t',  class_dict
-                self.printCodes(class_dict)
+                for classification in self.old_feature_importance:
+
+                    class_dict = dict(classification[1]).keys()
+                    print classification[0], ':\t',  class_dict
+                    self.printCodes(class_dict)
 
         else:
             self.old_feature_importance = None
@@ -53,22 +52,42 @@ class Analizer(object):
 
         self.df_small = None
         self.model = None
+        self.model_small = None
         self.predictions = None
-        self.results = None
+        self.last_results = None
 
         self.predict = new_predict
 
         self._main()
 
 
-    def printCodes(self, codes):
+    def _main(self):
+        '''
+        What: This function calls the data hygiene, simple feature engineering, and model constuction methods;
+        and prints the results
 
-        for i, code in enumerate(codes):
-            if code in self.code_dict.keys():
-                print code + ", " + self.code_dict[code]
-            else:
-                print code
-        print "\n"
+        Inputs: receives initial data from __init__
+        Outputs: print statements
+        '''
+        # self.printSurveyAbstract()
+
+        print ("\n Main(), for " + self.predict + '\n')
+
+        self.trimFeatures(verbose=True)
+        self.compressV4529()
+        self.correctFeatureImbalance()
+        self.examineFeature(self.predict)
+
+        gl.canvas.set_target('browser')
+
+        #gl.SFrame(self.df_data).show()
+
+
+        # this method takes ~35mins to execute
+        # self.computeFeatureImportance([1,5,7,11,21,31,40,54,57])
+
+        self.predictFeatureGL(GLiters=6, feature_slice=30)
+
 
     def compressV4529(self):
         '''
@@ -159,7 +178,8 @@ class Analizer(object):
         del self.df_data['V4529']
         self.df_data['V4529'] = values
 
-    def correctFeatureImbalance(self, classes=[54, 57, 31, 11, 21, 1, 5, 7, 40], ratios=[.3, .7, .7, .7]):
+
+    def correctFeatureImbalance(self, classes=[54, 57, 31, 11, 21, 1, 5, 7, 40], ratios=[.15, .4, .4, .4]):
 
         sf_new = None
 
@@ -181,29 +201,35 @@ class Analizer(object):
 
         self.df_data = sf_new.to_dataframe()
 
+
     def trimFeatures(self, verbose=False):
         low_var_features = ['V2001', 'V2009', 'V2027', 'V2028', 'V2029', 'V2030', 'V2031', 'V2109',
                             'V2110', 'V2112', 'V2114', 'V2115', 'V2123', 'V2131', 'V2142', 'V3001',
                             'V3027', 'V3051', 'V3057', 'V3060', 'V3069', 'V3082', 'V4001', 'V4319',
-                            'V4320']
+                            'V4320',
+                            'V2060', 'V2061', 'V2062', 'V4313'
+                            ]
 
         overpowered_features = ['V4528','V4529', 'V4526', 'V4350', # 4526/8/9, type of crime
-            'V4140B1', 'V4140B2', 'V4140B3', 'V4140B10',
-            'V4002', 'V4048', 'V4049', 'V4092', 'V4097', 'V4098', 'V4099', 'V4100', 'V4101', # 4097, attacked: shot
+            'V4140B1', 'V4140B2', 'V4140B3', 'V4140B10', # 'did you feel x ?'
+            'V4024', 'V4074', 'V4075', 'V4359', 'V4311', 'V4375', 'V4352', 'V4076', 'V4376',
+            'V4002', 'V4048', 'V4049', 'V4073', 'V4092', 'V4097', 'V4098', 'V4099', 'V4100', 'V4101', # 4097, attacked: shot
             'V4102', 'V4103', 'V4104', 'V4105', 'V4106', 'V4107', 'V4108', 'V4109', 'V4111', 'V4123',
             'V4059', 'V4093', 'V4062', 'V4005', 'V4071', 'V4077', 'V4060', 'V4061', 'V4096', 'V4127', 'V4040',
-            'V4112', 'V4094', 'V4364', 'V4321', 'V4287', 'V4288', 'V4289', 'V4028', 'V4027',
+            'V4112', 'V4094', 'V4364', 'V4321', 'V4287', 'V4288', 'V4289', 'V4028', 'V4027', 'V4029',
             'V4373', 'V4290', 'V4012', 'V4026', 'V4095', 'V4078', 'V4079', 'V4080', 'V4081', 'V4082', 'V4161',
             'V4050', # 4050, what was weapon
             'V4404', 'V4405', 'V4406', 'V4407', 'V4408', 'V4409', 'V4410', 'V4411', 'V4412', 'V4413',
             'V4414', 'V4415', 'V4416', 'V4417', 'V4418', 'V4419', 'V4420', 'V4421', # 4404-4420, reason not reported
             'V4522A', 'V4522B', 'V4522C', 'V4522D', 'V4522E', 'V4522F',# customer or client
             'V4291', 'V4292', 'V4293', 'V4294', 'V4295', 'V4296', 'V4297', 'V4298', 'V4299', 'V4314',
-            'V4322', 'V4323', 'V4324', 'V4326', 'V4351', 'V4357', 'V4385', 'V4397',
+            'V4310', 'V4358', 'V4162', 'V4110', 'V4381', 'V4371',
+            'V4322', 'V4323', 'V4324', 'V4326', 'V4351', 'V4357', 'V4385', 'V4397', 'V4360', 'V4317',
             'V4063', 'V4064', 'V4065', 'V4066', 'V4067', 'V4068', 'V4069', 'V4070', #these are all targets
             'V4422', 'V4011', 'V4423', 'V4426', # reason (or not) reported
-            'V3080', 'V3026', 'V3002', 'V3008', 'V3013', 'V3005',
-            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2033', 'V2005', 'V2006', 'V2012', 'V2016', 'V2011',
+            'V3014', 'V3080', 'V3026', 'V3002', 'V3008', 'V3013', 'V3005',
+            'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2023', 'V2033', 'V2005', 'V2006', 'V2012', 'V2016',
+            'V2011', 'V2014', 'V2073', 'V2022', 'V2024', # housing info
             # 'INCREPWGT148', 'INCREPWGT40', 'INCREPWGT2', 'INCREPWGT3', 'INCREPWGT51',
             # 'INCREPWGT14', 'INCREPWGT43', 'INCREPWGT57', 'INCREPWGT83',
             'FRCODE', 'WGTPERCY', 'WGTHHCY', 'IDPER', 'IDHH', 'V4008', 'YEARQ', 'V2003','V2004']  #
@@ -228,11 +254,13 @@ class Analizer(object):
         'V2133',
         'V4157', 'V4159', # victim actions taken
         'V4120', 'V4121', 'V4122',  # victim injuries
-        'V4140B6', 'V4140B7', 'V4140B4', 'V4140B5', 'V4140B8', 'V4140B9', # 'did you feel X?'
+        'V4140B6', 'V4140B7', 'V4140B4', 'V4140B5', 'V4140B8', 'V4140B9', 'V4140B12', 'V4140B13',
+        'V4140B11', # 'did you feel X?'
         'V3055', # first incident
-        'V4355', 'V3056', '' # 'car' in description
+        'V4355', 'V3056', 'V4072', # 'car' in description
         'VICREPWGT71', 'VICREPWGT70', 'VICREPWGT73', 'VICREPWGT72', 'VICREPWGT75', 'VICREPWGT74',
-        'VICREPWGT77', 'VICREPWGT76' #replicate weight, method for accounting for survey data
+        'VICREPWGT77', 'VICREPWGT76', #replicate weight, method for accounting for survey data
+        'V3047'
         ]
 
         if self.predict in overpowered_features:
@@ -259,53 +287,33 @@ class Analizer(object):
         freq = Counter(list(df_examine.values))
 
         for item in freq.items():
-            print "crime_category, frequency - ", item, ": \t", self.crime_dict[item[0]]
+            percent = np.round((float(item[1]) / self.df_data[self.predict].count()) * 100, 1)
+            print "crime_cat., frequency - ", item,": ", percent, "% \t- ", self.crime_dict[item[0]]
+
 
     def testForDataLeakage(self, typeOfCrime=1, top_n=20):
 
         feature_aucs = {}
 
         for feature in list(self.df_data.columns.values):
-            model_cur = LogisticRegression(n_jobs=-1)
 
-            cur_X = self.df_data[feature].values
-            cur_X = cur_X.reshape(cur_X.shape[0], 1)
+            if str(feature) == 'V4529':
+                pass
+            else:
+                model_cur = LogisticRegression(n_jobs=-1)
 
-            cur_y = self.df_data[self.predict].apply(lambda x: 1 if x==typeOfCrime else 0).values
+                cur_X = self.df_data[feature].values
+                cur_X = cur_X.reshape(cur_X.shape[0], 1)
 
-            auc_cur = cross_val_score(model_cur, cur_X, cur_y, n_jobs=-1)
+                cur_y = self.df_data[self.predict].apply(lambda x: 1 if x==typeOfCrime else 0).values
 
-            feature_aucs[feature] = np.round(np.mean(auc_cur), 4)
+                auc_cur = cross_val_score(model_cur, cur_X, cur_y, n_jobs=-1)
+
+                feature_aucs[feature] = np.round(np.mean(auc_cur), 4)
 
         auc_counter = Counter(feature_aucs).most_common(top_n)
 
         return list(auc_counter)
-
-    def _main(self):
-
-        '''
-        What: This function calls the data hygiene, simple feature engineering, and model constuction methods;
-        and prints the results
-
-        Inputs: receives initial data from __init__
-        Outputs: print statements
-        '''
-        # self.printSurveyAbstract()
-        print ("\n Main(), for " + self.predict + '\n')
-
-        self.trimFeatures(verbose=True)
-        #self.regressOnFeatureSM()
-        self.compressV4529()
-
-        #print "\n Before \n"
-        #self.examineFeature(self.predict)
-        self.correctFeatureImbalance()
-        #print "\n After \n"
-        self.examineFeature(self.predict)
-
-        #self.computeFeatureImportance([1,5,7,11,21,31,40,54,57])
-
-        #self.predictFeatureGL(GLiters=6, feature_slice=30)
 
 
     def computeFeatureImportance(self, crimes = [12, 31]):
@@ -320,7 +328,7 @@ class Analizer(object):
         crime_to_features_causation = []
         print "\n--------------------------"
         print '\ncomputeFeatureImportance():  ', str(len(crimes)), " crime categories"
-        #print "\t Matrix shape: ", self.df_data.columns.shape(), '\n'
+        print "\t Matrix shape: ", str(self.df_data.shape), '\n'
 
         for i, crime in enumerate(crimes):
             print "\t", str(int(i)+1), self.crime_dict[crime], "\n"
@@ -378,18 +386,19 @@ class Analizer(object):
         '''
 
         self.model = self.doOneGLModel(self.predict, self.df_data, iters=GLiters)
-        self.printResults()
+        self.printResults("big")
 
         if self.predict == 'V4529':
             self.printCrimeDict()
 
         # make a slice of df_data with given feature_importance and then make a model with just those features
-        self.df_small = self.getTopNfeatures(feature_slice)
-        self.model = self.doOneGLModel(self.predict, self.df_small, iters=GLiters*3)
-        self.printResults()
+        for n_features in [10, 20, feature_slice]:
+            print "\n\n<><><><><><><><><><><> n_features: ", n_features, " <><><><><><><><><><><><><><>\n"
+            self.df_small = self.getTopNfeatures(n_features)
+            self.model_small = self.doOneGLModel(self.predict, self.df_small, iters=GLiters*5)
+            self.printResults("small")
 
-        self.getTopNfeatures(feature_slice)
-
+            # self.getTopNfeatures(n_features)
 
 
     def codebookIntoDict(self, my_file='data/data_meta/BIG-Codebook.txt'):
@@ -440,7 +449,6 @@ class Analizer(object):
         return code_dict
 
 
-
     def delFeatures(self, features):
         for cur_feat in features:
             del self.df_data[cur_feat]
@@ -471,7 +479,7 @@ class Analizer(object):
                 column_subsample=1.0, verbose=True, random_seed=42, metric='auto')
 
         self.predictions = model.predict(sf_data)
-        self.results = model.evaluate(sf_data)
+        self.last_results = model.evaluate(sf_data)
         print ("\n -> Finished computing model.")
         print ("\n<------------------------------------------------------------->")
         print ("Results for " + predict + " " + self.code_dict[predict] + " :\n")
@@ -479,17 +487,29 @@ class Analizer(object):
         return model
 
 
-    def printResults(self):
-
+    def printResults(self, size="big"):
         print "\nFeature importance: \n"
-        print self.model.get_feature_importance()
+
+        if size=="big":
+            print self.model.get_feature_importance()
+        else:
+            print self.model_small.get_feature_importance()
 
         print("\nModel results: \n")
 
-        print self.results
+        print self.last_results
 
 
-    def getTopNfeatures(self, N=10):
+    def printCodes(self, codes):
+        for i, code in enumerate(codes):
+            if code in self.code_dict.keys():
+                print code + ", " + self.code_dict[code]
+            else:
+                print code
+        print ""
+
+
+    def getTopNfeatures(self, top_n_features):
         '''
         What: After I compute a model for all features, then go and create a new pandas dataframe, df_small,
          to be used to re-make the model with only the top N most important features.
@@ -498,20 +518,14 @@ class Analizer(object):
         Outputs: a pandas dataframe, df_small, which is a subset of self.df_data, including only the top N features
         various print statements
         '''
-        top_n_features = N
 
         features_small = list(self.model.get_feature_importance()['name'][0:top_n_features])
-        print ("\n Top " + str(top_n_features) + " features of model: \n")
-
-        if " HC" in features_small:
-            print 'Note: HC = Hate Crime \n'
+        print ("\t Top " + str(top_n_features) + " features of model: \n")
 
         self.printCodes(features_small)
 
-
-        predict = self.predict
         # 4528, type of crime
-        features_small.append(predict)
+        features_small.append(self.predict)
 
         df_small = self.df_data[features_small]
 
@@ -519,7 +533,8 @@ class Analizer(object):
 
 
     def printSurveyAbstract(self):
-        abstract = '''The National Crime Victimization Survey (NCVS), ... has been collecting data on personal and
+        abstract = '''Abstract:
+        The National Crime Victimization Survey (NCVS), ... has been collecting data on personal and
         household victimization through an ongoing survey of a nationally-representative sample of residential addresses since 1972. The survey
         is administered by the U.S. Census Bureau (under the U.S. Department of Commerce) on behalf of the Bureau of Justice Statistics (under
         the U.S. Department of Justice).
@@ -541,11 +556,18 @@ class Analizer(object):
         various sub-populations for select years. Information is also obtained on vandalism and identity theft experienced by the household. The
         glossary (see p. 493) describes terms relevant to the NCVS.
         Analysts who are interested in the history of the redesign of the NCVS or are interested in conducting analyses using both NCS and NCVS
-        data should refer to the NCVS Resource Guide (http://www.icpsr.umich.edu/NACJD/NCVS) on the NACJD Web site.'''
+        data should refer to the NCVS Resource Guide (http://www.icpsr.umich.edu/NACJD/NCVS) on the NACJD Web site.
+
+        Additional definitions:
+
+        "Reference person" -- the household member who owns, is buying, or is renting the housing unit. The reference person
+        may be any one household member 18 years of age or older -- usually the first person listed in the household membership.
+        "HC" -- Hate Crime.
+        '''
         print abstract
 
 
-Analizer(new_predict='V4529')
+Analizer(new_predict='V4529', verbose=False)
 # V4529 type of crime
 
 
