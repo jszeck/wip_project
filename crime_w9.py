@@ -26,10 +26,16 @@ class Analizer(object):
         self.df_data = pd.read_table(new_file)
 
         self.code_dict = self.codebookIntoDict()
-        self.crime_dict = {1: "Sexual assault or rape", 5: "Robbery with assault", 7: "Robbery without assault",
-                           11: "Assault", # 12: "Assault with a weapon", 16: "Unwanted sexual contact without force",
-                           21: "Pickpocketing or purse snatching", 31: "Home invasion theft", 40: "Car theft",
-                           54: "Theft under $250", 57: "Theft over $250"} # , -1: "Not defined / error"}
+        self.crime_dict = {1: "Sexual assault or rape",
+                           5: "Robbery with assault",
+                           7: "Robbery without assault",
+                           11: "Assault",
+                           21: "Pickpocketing or purse snatching",
+                           31: "Home invasion theft",
+                           40: "Car theft",
+                           54: "Theft under $250",
+                           57: "Theft over $250"}
+                    # , -1: "Not defined / error"}# 12: "Assault with a weapon", 16: "Unwanted sexual contact without force",
 
         path = 'feature_importanceSK_V4529.p'
 
@@ -43,8 +49,8 @@ class Analizer(object):
                 for classification in self.old_feature_importance:
 
                     class_dict = dict(classification[1]).keys()
-                    print classification[0], ':\t',  class_dict
-                    self.printCodes(class_dict)
+                    print classification[0] #, ':\t',  class_dict
+                    self.printCodes(class_dict, n_print=8)
 
         else:
             self.old_feature_importance = None
@@ -78,7 +84,7 @@ class Analizer(object):
         self.correctFeatureImbalance()
         self.examineFeature(self.predict)
 
-        gl.canvas.set_target('browser')
+        #gl.canvas.set_target('browser')
 
         #gl.SFrame(self.df_data).show()
 
@@ -86,7 +92,7 @@ class Analizer(object):
         # this method takes ~35mins to execute
         # self.computeFeatureImportance([1,5,7,11,21,31,40,54,57])
 
-        self.predictFeatureGL(GLiters=6, feature_slice=30)
+        self.predictFeatureGL(GLiters=6, feature_slices=[5, 10], remake=True)
 
 
     def compressV4529(self):
@@ -214,7 +220,7 @@ class Analizer(object):
             'V4140B1', 'V4140B2', 'V4140B3', 'V4140B10', # 'did you feel x ?'
             'V4024', 'V4074', 'V4075', 'V4359', 'V4311', 'V4375', 'V4352', 'V4076', 'V4376',
             'V4002', 'V4048', 'V4049', 'V4073', 'V4092', 'V4097', 'V4098', 'V4099', 'V4100', 'V4101', # 4097, attacked: shot
-            'V4102', 'V4103', 'V4104', 'V4105', 'V4106', 'V4107', 'V4108', 'V4109', 'V4111', 'V4123',
+            'V4102', 'V4103', 'V4104', 'V4105', 'V4106', 'V4107', 'V4108', 'V4109', 'V4111',
             'V4059', 'V4093', 'V4062', 'V4005', 'V4071', 'V4077', 'V4060', 'V4061', 'V4096', 'V4127', 'V4040',
             'V4112', 'V4094', 'V4364', 'V4321', 'V4287', 'V4288', 'V4289', 'V4028', 'V4027', 'V4029',
             'V4373', 'V4290', 'V4012', 'V4026', 'V4095', 'V4078', 'V4079', 'V4080', 'V4081', 'V4082', 'V4161',
@@ -225,7 +231,9 @@ class Analizer(object):
             'V4291', 'V4292', 'V4293', 'V4294', 'V4295', 'V4296', 'V4297', 'V4298', 'V4299', 'V4314',
             'V4310', 'V4358', 'V4162', 'V4110', 'V4381', 'V4371',
             'V4322', 'V4323', 'V4324', 'V4326', 'V4351', 'V4357', 'V4385', 'V4397', 'V4360', 'V4317',
-            'V4063', 'V4064', 'V4065', 'V4066', 'V4067', 'V4068', 'V4069', 'V4070', #these are all targets
+            'V4063', 'V4064', 'V4065', 'V4066', 'V4067', 'V4068', 'V4069', 'V4070', # more targets
+            'V4113', 'V4114', 'V4115', 'V4116', 'V4117', 'V4118', 'V4119', 'V4123', # injuries
+            'V4377', 'V4378', 'V3052', 'V3053', #these are all targets
             'V4422', 'V4011', 'V4423', 'V4426', # reason (or not) reported
             'V3014', 'V3080', 'V3026', 'V3002', 'V3008', 'V3013', 'V3005',
             'V2008', 'V2002', 'V2116', 'V2117', 'V2118', 'V2023', 'V2033', 'V2005', 'V2006', 'V2012', 'V2016',
@@ -377,7 +385,7 @@ class Analizer(object):
         print modelSM.summary()
 
 
-    def predictFeatureGL(self, GLiters=4, feature_slice=20):
+    def predictFeatureGL(self, GLiters=4, feature_slices=[8,15], remake=True):
         '''
         What: Does model constuction methods; and prints the results
 
@@ -390,15 +398,16 @@ class Analizer(object):
 
         if self.predict == 'V4529':
             self.printCrimeDict()
+        if remake == True:
+            # make a slice of df_data with given feature_importance and then make a model with just those features
+            print "\n /\/\/\/\/\/\/\/\/\/\/\/ start remaking the models here /\/\/\/\/ "
+            for n_features in feature_slices:
+                print "\n\n<><><><><><><><><><><> n_features: ", n_features, " <><><><><><><><><><><><><><>\n"
+                self.df_small = self.getTopNfeatures(n_features)
+                self.model_small = self.doOneGLModel(self.predict, self.df_small, iters=GLiters*5)
+                self.printResults("small")
 
-        # make a slice of df_data with given feature_importance and then make a model with just those features
-        for n_features in [10, 20, feature_slice]:
-            print "\n\n<><><><><><><><><><><> n_features: ", n_features, " <><><><><><><><><><><><><><>\n"
-            self.df_small = self.getTopNfeatures(n_features)
-            self.model_small = self.doOneGLModel(self.predict, self.df_small, iters=GLiters*5)
-            self.printResults("small")
-
-            # self.getTopNfeatures(n_features)
+        self.getTopNfeatures(feature_slices[len(feature_slices)-1])
 
 
     def codebookIntoDict(self, my_file='data/data_meta/BIG-Codebook.txt'):
@@ -476,7 +485,7 @@ class Analizer(object):
         model = gl.boosted_trees_classifier.create(sf_data, predict, features=None,
                 max_iterations=iters, validation_set='auto', class_weights=None, max_depth=15,
                 step_size=0.3, min_loss_reduction=0.0, min_child_weight=0.1, row_subsample=1.0,
-                column_subsample=1.0, verbose=True, random_seed=42, metric='auto')
+                column_subsample=1.0, verbose=True, random_seed=None, metric='auto')
 
         self.predictions = model.predict(sf_data)
         self.last_results = model.evaluate(sf_data)
@@ -500,12 +509,15 @@ class Analizer(object):
         print self.last_results
 
 
-    def printCodes(self, codes):
+    def printCodes(self, codes, n_print):
+
         for i, code in enumerate(codes):
-            if code in self.code_dict.keys():
-                print code + ", " + self.code_dict[code]
-            else:
-                print code
+
+            if i <= n_print:
+                if code in self.code_dict.keys():
+                    print code + ", " + self.code_dict[code]
+                else:
+                    print code
         print ""
 
 
@@ -522,7 +534,7 @@ class Analizer(object):
         features_small = list(self.model.get_feature_importance()['name'][0:top_n_features])
         print ("\t Top " + str(top_n_features) + " features of model: \n")
 
-        self.printCodes(features_small)
+        self.printCodes(features_small, len(features_small))
 
         # 4528, type of crime
         features_small.append(self.predict)
